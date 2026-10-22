@@ -25,7 +25,8 @@
 #include <atomic>
 #include <iostream>
 #include <mutex>
-
+#include <thread>
+#include <cassert>
 // Internal headers
 #include "entrypoint.hpp"
 #include "runner.hpp"
@@ -38,25 +39,35 @@
 /** Lock default constructor.
 **/
 Lock::Lock() {
-    // ...
+    this->mutex=false;
 }
 
 /** Lock destructor.
 **/
 Lock::~Lock() {
-    // ...
+    //this lock is just a stored bit(bool) and the compiler will take care of cleaning it so no 
+    //further action is required
+    assert(!mutex.load(std::memory_order_relaxed) && "Lock destroyed while still held!");
 }
 
 /** [thread-safe] Acquire the lock, block if it is already acquired.
 **/
 void Lock::lock() {
-    // ...
+    bool expected = false;
+    while (!this->mutex.compare_exchange_weak(expected, true
+                                        ,::std::memory_order_acquire
+                                        ,::std::memory_order_relaxed
+                                        )
+            ) {
+        expected = false;
+        while (mutex.load(::std::memory_order_relaxed)) ::std::this_thread::yield();
+    }
 }
 
 /** [thread-safe] Release the lock, assuming it is indeed held by the caller.
 **/
 void Lock::unlock() {
-    // ...
+    mutex.store(false,::std::memory_order_release);
 }
 
 // -------------------------------------------------------------------------- //

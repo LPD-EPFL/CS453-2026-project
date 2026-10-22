@@ -29,6 +29,9 @@
 **/
 class Lock final {
 public:
+    //shared lock
+    using Mutex = ::std::atomic<bool>;
+    Mutex mutex ;
     /** Deleted copy/move constructor/assignment.
     **/
     Lock(Lock const&) = delete;
